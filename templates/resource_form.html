@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}List New Resource — ShareSpace{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 20px auto;">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('index') }}" class="btn btn-outline btn-sm">&larr; Back to Catalog</a>
+    </div>
+
+    <div class="detail-card">
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--slate-900); margin-bottom: 6px;">List a New Shared Resource</h1>
+        <p style="font-size: 0.9rem; color: var(--slate-500); margin-bottom: 24px;">
+            Add a tool, workspace, or device to the community catalog with training requirements and fair usage limits.
+        </p>
+
+        <form method="POST" action="{{ url_for('add_resource') }}">
+            <div class="form-group">
+                <label for="title">Resource Title *</label>
+                <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Sony FX3 Cinema Camera Kit" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" class="form-control" required>
+                        <option value="Electronics">Electronics & Computing</option>
+                        <option value="Media & Cameras">Media & Cameras</option>
+                        <option value="Lab Equipment">Lab Equipment</option>
+                        <option value="Tools">Workshop & Power Tools</option>
+                        <option value="Workspaces">Workspaces & Rooms</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Storage Location / Room *</label>
+                    <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Media Lab - Station 2" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Detailed Description & Included Accessories *</label>
+                <textarea id="description" name="description" rows="3" class="form-control" placeholder="Specify model specs, cables, lens caps, and any handling instructions..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="image_url">Image URL</label>
+                <input type="url" id="image_url" name="image_url" class="form-control" placeholder="https://images.unsplash.com/... (Leave empty for default)">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="required_certification_id">Required Training / Safety Clearance</label>
+                    <select id="required_certification_id" name="required_certification_id" class="form-control">
+                        <option value="">None (Open to all members)</option>
+                        {% for cert in certifications %}
+                            <option value="{{ cert['id'] }}">{{ cert['name'] }} ({{ cert['code'] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="max_days">Fair Usage Cap (Max Days Per Booking) *</label>
+                    <input type="number" id="max_days" name="max_days" class="form-control" value="3" min="1" max="14" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">
+                Publish Resource to Catalog
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

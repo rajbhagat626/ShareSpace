@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}{{ resource['title'] }} — ShareSpace{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('index') }}" class="btn btn-outline btn-sm">&larr; Back to Catalog</a>
+</div>
+
+<div class="detail-layout">
+    <!-- Left Column: Specs, Image, and Scheduled Bookings -->
+    <div>
+        <div class="detail-card" style="margin-bottom: 24px;">
+            <div class="detail-img-wrapper" style="border-radius: 8px; overflow: hidden; margin-bottom: 20px; background: #e2e8f0;">
+                <img src="{{ resource['image_url'] or 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80' }}" alt="{{ resource['title'] }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80';">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px;">
+                <div>
+                    <span class="badge" style="background: var(--primary-light); color: var(--primary); margin-bottom: 8px;">{{ resource['category'] }}</span>
+                    <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900); line-height: 1.2;">{{ resource['title'] }}</h1>
+                </div>
+                <span class="badge badge-{{ resource['status'] }}" style="font-size: 0.95rem; padding: 6px 14px;">
+                    {% if resource['status'] == 'available' %}🟢 Available Now
+                    {% elif resource['status'] == 'in_use' %}🔵 Currently In Use
+                    {% elif resource['status'] == 'reserved' %}🟣 Reserved
+                    {% elif resource['status'] == 'maintenance' %}🚨 Maintenance / Repair
+                    {% else %}{{ resource['status'] }}{% endif %}
+                </span>
+            </div>
+
+            <p style="color: var(--slate-700); font-size: 1rem; line-height: 1.6; margin-bottom: 20px;">
+                {{ resource['description'] }}
+            </p>
+
+            <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; padding: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; font-size: 0.9rem;">
+                <div>
+                    <span style="color: var(--slate-500); display: block;">📍 Physical Location:</span>
+                    <strong>{{ resource['location'] or 'Facility Front Desk' }}</strong>
+                </div>
+                <div>
+                    <span style="color: var(--slate-500); display: block;">👤 Managed By / Owner:</span>
+                    <strong>{{ resource['owner_name'] }}</strong>
+                </div>
+                <div>
+                    <span style="color: var(--slate-500); display: block;">⏱️ Fair Usage Cap:</span>
+                    <strong>Max {{ resource['max_days'] }} Consecutive Days</strong>
+                </div>
+                <div>
+                    <span style="color: var(--slate-500); display: block;">🛡️ Training Requirement:</span>
+                    <strong>{{ resource['required_cert_name'] or 'None (Open to All)' }}</strong>
+                </div>
+            </div>
+
+            <!-- Report Incident Shortcut -->
+            <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline btn-sm btn-report-incident" data-resource-id="{{ resource['id'] }}" style="color: #dc2626;">
+                    🚨 Report Damage or Defect
+                </button>
+            </div>
+        </div>
+
+        <!-- Booked Schedule / Calendar Timetable -->
+        <div class="detail-card">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>📅 Existing Bookings & Reserved Slots</span>
+            </h3>
+            <p style="font-size: 0.88rem; color: var(--slate-600); margin-bottom: 14px;">
+                Check occupied dates below to prevent scheduling collisions.
+            </p>
+
+            {% if occupied_slots %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Borrower</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for slot in occupied_slots %}
+                                <tr>
+                                    <td><strong>{{ slot['borrower_name'] }}</strong></td>
+                                    <td>{{ slot['start_date'] }}</td>
+                                    <td>{{ slot['end_date'] }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ slot['status'] }}">
+                                            {{ slot['status'] }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="background: var(--success-light); color: #166534; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem;">
+                    ✨ No upcoming reservations found. All calendar dates are currently open for booking!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Eligibility, Fair Usage & Booking Request Form -->
+    <div>
+        <!-- 1. Eligibility & Training Verification Box -->
+        {% if resource['required_cert_name'] %}
+            <div class="detail-card" style="margin-bottom: 20px; border-left: 4px solid {% if is_eligible %}#16a34a{% else %}#d97706{% endif %};">
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">
+                    {% if is_eligible %}
+                        ✅ Training Verified & Eligible
+                    {% else %}
+                        🔒 Training Required Before Booking
+                    {% endif %}
+                </h3>
+                <p style="font-size: 0.88rem; color: var(--slate-600); margin-bottom: 12px;">
+                    This resource requires completion of <strong>{{ resource['required_cert_name'] }}</strong> for equipment safety compliance.
+                </p>
+
+                {% if is_eligible %}
+                    <div style="background: var(--success-light); color: #166534; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">
+                        Verified Clearance: You are qualified to operate this equipment.
+                    </div>
+                {% else %}
+                    <div style="background: var(--warning-light); color: #92400e; padding: 12px 14px; border-radius: 6px; font-size: 0.88rem; margin-bottom: 14px;">
+                        You have not yet completed this training module.
+                    </div>
+                    {% if g.user %}
+                        <form method="POST" action="{{ url_for('complete_training', cert_id=resource['required_certification_id']) }}">
+                            <input type="hidden" name="redirect_to" value="{{ request.path }}">
+                            <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;">
+                                🎓 Complete Training Simulation (1-Click Clearance)
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- 2. Booking / Waitlist Action Card -->
+        <div class="detail-card">
+            {% if resource['status'] == 'maintenance' %}
+                <div style="text-align: center; padding: 24px 0;">
+                    <div style="font-size: 3rem; margin-bottom: 8px;">🚨</div>
+                    <h3 style="color: #991b1b; font-weight: 700; margin-bottom: 6px;">Resource Under Maintenance</h3>
+                    <p style="font-size: 0.9rem; color: var(--slate-600); margin-bottom: 16px;">
+                        This item has been flagged for repair or safety inspection and cannot be booked currently.
+                    </p>
+                    <a href="{{ url_for('incidents') }}" class="btn btn-outline btn-sm">View Incident Report</a>
+                </div>
+
+            {% elif not g.user %}
+                <div style="text-align: center; padding: 20px 0;">
+                    <h3>Sign In to Book</h3>
+                    <p style="font-size: 0.9rem; color: var(--slate-600); margin-bottom: 16px;">
+                        Please log in to check your eligibility and reserve this item.
+                    </p>
+                    <a href="{{ url_for('login') }}" class="btn btn-primary" style="width: 100%;">Log In / Switch Persona</a>
+                </div>
+
+            {% elif resource['required_cert_name'] and not is_eligible %}
+                <div style="text-align: center; padding: 20px 0; color: var(--slate-600);">
+                    <p style="font-size: 0.95rem; margin-bottom: 12px;">
+                        Booking is currently locked until you complete the required training module above.
+                    </p>
+                </div>
+
+            {% else %}
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 6px;">Reserve This Resource</h3>
+                <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 18px;">
+                    Select your requested reservation window. Max duration: <strong>{{ resource['max_days'] }} days</strong>.
+                </p>
+
+                <form method="POST" action="{{ url_for('create_booking', resource_id=resource['id']) }}">
+                    <div class="form-group">
+                        <label for="startDate">Start Date *</label>
+                        <input type="date" id="startDate" name="start_date" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endDate">End Date *</label>
+                        <input type="date" id="endDate" name="end_date" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="purpose">Project Purpose / Usage Details *</label>
+                        <textarea id="purpose" name="purpose" rows="3" class="form-control" required placeholder="Explain what project or task this will be used for..."></textarea>
+                    </div>
+
+                    <div style="background: var(--slate-100); border-radius: 6px; padding: 10px 12px; font-size: 0.8rem; color: var(--slate-600); margin-bottom: 16px;">
+                        ⚖️ <strong>Fair Usage Policy:</strong> You may have at most 3 active reservations across the workspace. Reservations are subject to owner approval.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+                        Submit Booking Request
+                    </button>
+                </form>
+
+                <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--slate-200);">
+
+                <!-- Waitlist Option -->
+                <div style="background: var(--purple-light); border-radius: 8px; padding: 16px;">
+                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #581c87; margin-bottom: 6px;">
+                        ⏳ Dates Clashing or Fully Booked?
+                    </h4>
+                    <p style="font-size: 0.85rem; color: #6b21a8; margin-bottom: 12px;">
+                        Join the transparent waiting list. You will be prioritized and automatically notified if someone returns early or cancels.
+                    </p>
+                    <form method="POST" action="{{ url_for('join_waitlist', resource_id=resource['id']) }}">
+                        <button type="submit" class="btn btn-outline btn-sm" style="background: white; width: 100%; border-color: #c084fc; color: #581c87;">
+                            Join Waiting List ({% if waitlist_count > 0 %}{{ waitlist_count }} currently in queue{% else %}First in line!{% endif %})
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

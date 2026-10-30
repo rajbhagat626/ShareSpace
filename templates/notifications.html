@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications — ShareSpace{% endblock %}
+
+{% block content %}
+<div class="catalog-header">
+    <div>
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900);">Notifications & Alerts</h1>
+        <p style="color: var(--slate-600); font-size: 0.95rem;">
+            Real-time status updates on your reservations, approvals, waitlist promotions, and equipment return reminders.
+        </p>
+    </div>
+    {% if notifications %}
+        <form method="POST" action="{{ url_for('mark_notifications_read') }}">
+            <button type="submit" class="btn btn-outline btn-sm">Mark All as Read</button>
+        </form>
+    {% endif %}
+</div>
+
+{% if notifications %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for n in notifications %}
+            <div style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; {% if not n['is_read'] %}border-left: 4px solid var(--primary); background: #f8fafc;{% endif %}">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-900);">{{ n['title'] }}</h4>
+                        {% if not n['is_read'] %}
+                            <span class="badge" style="background: #dbeafe; color: #1e40af; font-size: 0.7rem;">New</span>
+                        {% endif %}
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--slate-700); margin-bottom: 8px;">
+                        {{ n['message'] }}
+                    </p>
+                    <span style="font-size: 0.78rem; color: var(--slate-400);">{{ n['created_at'] }}</span>
+                </div>
+                {% if n['link'] %}
+                    <a href="{{ n['link'] }}" class="btn btn-outline btn-sm" style="flex-shrink: 0;">
+                        View Details &rarr;
+                    </a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div style="background: white; border: 1px dashed var(--slate-300); border-radius: var(--radius); padding: 48px; text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 12px;">🔔</div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--slate-800); margin-bottom: 6px;">All Caught Up!</h3>
+        <p style="color: var(--slate-500);">You have no pending alerts or notifications at this time.</p>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up — ShareSpace{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 40px auto;">
+    <div class="detail-card">
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--slate-900); margin-bottom: 6px;">Join ShareSpace</h2>
+        <p style="font-size: 0.88rem; color: var(--slate-500); margin-bottom: 20px;">Create your account to start borrowing and sharing community resources.</p>
+
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Taylor Smith" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="taylor@sharespace.local" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password *</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Create a secure password" required minlength="6">
+            </div>
+
+            <div class="form-group">
+                <label for="role">Account Role *</label>
+                <select name="role" id="role" class="form-control">
+                    <option value="member" selected>Member / Borrower (Reserve equipment & spaces)</option>
+                    <option value="owner">Resource Owner (Share & manage my equipment)</option>
+                    <option value="admin">Lab Administrator (Full governance & clearances)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">
+                Complete Registration
+            </button>
+        </form>
+
+        <div style="margin-top: 20px; text-align: center; font-size: 0.88rem; color: var(--slate-600);">
+            Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

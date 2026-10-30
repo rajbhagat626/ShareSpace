@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog — ShareSpace{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <!-- Stats Banner -->
+    <div class="stats-grid">
+        <div class="stats-card" style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px;">
+            <div style="background: #eff6ff; color: #2563eb; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">📦</div>
+            <div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--slate-900);">{{ stats.total_resources }}</div>
+                <div style="font-size: 0.8rem; color: var(--slate-500); text-transform: uppercase; font-weight: 600;">Total Resources</div>
+            </div>
+        </div>
+        <div class="stats-card" style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px;">
+            <div style="background: #dcfce7; color: #16a34a; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">🟢</div>
+            <div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #15803d;">{{ stats.available_resources }}</div>
+                <div style="font-size: 0.8rem; color: var(--slate-500); text-transform: uppercase; font-weight: 600;">Available Now</div>
+            </div>
+        </div>
+        <div class="stats-card" style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px;">
+            <div style="background: #dbeafe; color: #1d4ed8; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">🔄</div>
+            <div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #1e40af;">{{ stats.active_loans }}</div>
+                <div style="font-size: 0.8rem; color: var(--slate-500); text-transform: uppercase; font-weight: 600;">Active Loans</div>
+            </div>
+        </div>
+        <div class="stats-card" style="background: white; border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px;">
+            <div style="background: #fef3c7; color: #d97706; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">⏳</div>
+            <div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #b45309;">{{ stats.pending_requests }}</div>
+                <div style="font-size: 0.8rem; color: var(--slate-500); text-transform: uppercase; font-weight: 600;">Pending Approvals</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header & Action -->
+    <div class="catalog-header">
+        <div>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900);">Shared Resource Catalog</h1>
+            <p style="color: var(--slate-600); font-size: 0.95rem;">Browse, reserve, and share tools, labs, and equipment with verified training clearance.</p>
+        </div>
+        {% if g.user and g.user['role'] in ['owner', 'admin'] %}
+            <a href="{{ url_for('add_resource') }}" class="btn btn-primary">
+                ➕ List New Resource
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <form method="GET" action="{{ url_for('index') }}" class="search-filter-bar">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by name, location, or description..." class="search-input">
+        
+        <select name="category" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="status" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+            <option value="in_use" {% if selected_status == 'in_use' %}selected{% endif %}>In Use</option>
+            <option value="reserved" {% if selected_status == 'reserved' %}selected{% endif %}>Reserved</option>
+            <option value="maintenance" {% if selected_status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+        </select>
+
+        <button type="submit" class="btn btn-outline">Filter</button>
+        {% if query or selected_category or selected_status %}
+            <a href="{{ url_for('index') }}" class="btn btn-outline" style="color: var(--slate-500);">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Resource Cards Grid -->
+{% if resources %}
+    <div class="resource-grid">
+        {% for r in resources %}
+            <div class="resource-card">
+                <div class="card-img-wrapper">
+                    <img src="{{ r['image_url'] or 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80' }}" alt="{{ r['title'] }}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80';">
+                    <div class="card-badge-top">
+                        <span class="badge badge-{{ r['status'] }}">
+                            {% if r['status'] == 'available' %}🟢 Available
+                            {% elif r['status'] == 'in_use' %}🔵 In Use
+                            {% elif r['status'] == 'reserved' %}🟣 Reserved
+                            {% elif r['status'] == 'maintenance' %}🚨 Maintenance
+                            {% else %}{{ r['status'] }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="card-category">{{ r['category'] }}</div>
+                    <h3 class="card-title">{{ r['title'] }}</h3>
+                    <p class="card-desc">{{ r['description'] }}</p>
+
+                    <div class="card-meta">
+                        <div>📍 <strong>Location:</strong> {{ r['location'] or 'Main Facility' }}</div>
+                        <div>👤 <strong>Owner:</strong> {{ r['owner_name'] }}</div>
+                        <div>⏱️ <strong>Fair Usage Cap:</strong> Max {{ r['max_days'] }} day(s)</div>
+                        {% if r['required_cert_name'] %}
+                            <div style="color: #6b21a8; font-weight: 600; font-size: 0.82rem; margin-top: 2px;">
+                                🛡️ Required Training: {{ r['required_cert_name'] }}
+                            </div>
+                        {% else %}
+                            <div style="color: #15803d; font-size: 0.82rem; margin-top: 2px;">
+                                🟢 Open to All Members (No training required)
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-footer">
+                        {% if r['required_cert_name'] and not r['is_user_certified'] and g.user %}
+                            <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.75rem;">
+                                ⚠️ Needs Clearance
+                            </span>
+                        {% elif r['status'] == 'maintenance' %}
+                            <span class="badge badge-maintenance">Under Repair</span>
+                        {% else %}
+                            <span style="font-size: 0.85rem; color: var(--slate-500);">Instant Booking Ready</span>
+                        {% endif %}
+
+                        <a href="{{ url_for('resource_detail', resource_id=r['id']) }}" class="btn btn-primary btn-sm">
+                            View & Book &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div style="background: white; border: 1px dashed var(--slate-300); border-radius: var(--radius); padding: 48px; text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 12px;">🔍</div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--slate-800); margin-bottom: 6px;">No resources match your search</h3>
+        <p style="color: var(--slate-500); margin-bottom: 16px;">Try adjusting your search keywords or resetting category filters.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-outline">Reset Search</a>
+    </div>
+{% endif %}
+{% endblock %}

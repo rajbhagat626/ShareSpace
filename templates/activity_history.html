@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Trail & Activity History — ShareSpace{% endblock %}
+
+{% block content %}
+<div class="catalog-header">
+    <div>
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900);">Auditable System Activity Log</h1>
+        <p style="color: var(--slate-600); font-size: 0.95rem;">
+            An immutable chronological ledger of all lifecycle events, approvals, handovers, returns, and incident reports.
+        </p>
+    </div>
+
+    <!-- Filter Form -->
+    <form method="GET" action="{{ url_for('activity_history') }}" style="display: flex; gap: 10px;">
+        <select name="action" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Event Types</option>
+            <option value="REQUESTED" {% if selected_action == 'REQUESTED' %}selected{% endif %}>Booking Requested</option>
+            <option value="APPROVED" {% if selected_action == 'APPROVED' %}selected{% endif %}>Booking Approved</option>
+            <option value="CHECKED_IN" {% if selected_action == 'CHECKED_IN' %}selected{% endif %}>Check-In Handover</option>
+            <option value="RETURNED" {% if selected_action == 'RETURNED' %}selected{% endif %}>Return & Inspection</option>
+            <option value="INCIDENT_LOGGED" {% if selected_action == 'INCIDENT_LOGGED' %}selected{% endif %}>Incident Reported</option>
+            <option value="INCIDENT_RESOLVED" {% if selected_action == 'INCIDENT_RESOLVED' %}selected{% endif %}>Incident Resolved</option>
+            <option value="TRAINING_COMPLETED" {% if selected_action == 'TRAINING_COMPLETED' %}selected{% endif %}>Training Completed</option>
+            <option value="WAITLIST_JOINED" {% if selected_action == 'WAITLIST_JOINED' %}selected{% endif %}>Waitlist Joined</option>
+        </select>
+        {% if selected_action %}
+            <a href="{{ url_for('activity_history') }}" class="btn btn-outline">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if logs %}
+    <div class="timeline" style="margin-top: 24px;">
+        {% for log in logs %}
+            <div class="timeline-item">
+                <div class="timeline-dot 
+                    {% if log['action'] == 'APPROVED' %}dot-approved
+                    {% elif log['action'] == 'CHECKED_IN' %}dot-checked_in
+                    {% elif log['action'] == 'RETURNED' %}dot-returned
+                    {% elif log['action'] in ['INCIDENT_LOGGED', 'REJECTED'] %}dot-incident
+                    {% endif %}">
+                </div>
+                
+                <div class="timeline-content">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="badge" style="
+                                {% if log['action'] == 'APPROVED' %}background: #dcfce7; color: #166534;
+                                {% elif log['action'] == 'CHECKED_IN' %}background: #dbeafe; color: #1e40af;
+                                {% elif log['action'] == 'RETURNED' %}background: #f3e8ff; color: #6b21a8;
+                                {% elif log['action'] == 'INCIDENT_LOGGED' %}background: #fee2e2; color: #991b1b;
+                                {% elif log['action'] == 'INCIDENT_RESOLVED' %}background: #dcfce7; color: #166534;
+                                {% elif log['action'] == 'TRAINING_COMPLETED' %}background: #fef3c7; color: #92400e;
+                                {% elif log['action'] == 'WAITLIST_JOINED' %}background: #e0f2fe; color: #0284c7;
+                                {% else %}background: var(--slate-100); color: var(--slate-700);{% endif %}
+                            ">
+                                {{ log['action'] }}
+                            </span>
+                            <strong style="color: var(--slate-900);">{{ log['actor_name'] }}</strong>
+                            <span class="role-badge role-{{ log['actor_role'] }}" style="font-size: 0.7rem;">{{ log['actor_role'] }}</span>
+                        </div>
+                        <span class="timeline-time">{{ log['created_at'] }}</span>
+                    </div>
+
+                    <p style="font-size: 0.92rem; color: var(--slate-700); margin: 0;">
+                        {{ log['details'] }}
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div style="background: white; border: 1px dashed var(--slate-300); border-radius: var(--radius); padding: 48px; text-align: center; color: var(--slate-500);">
+        No activity log entries found for this filter.
+    </div>
+{% endif %}
+{% endblock %}

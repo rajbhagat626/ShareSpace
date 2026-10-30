@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ShareSpace — Resource Sharing Ecosystem{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- 1-Click Demo Persona Bar (Crucial Hackathon Showcase Tool) -->
+    <div class="demo-bar">
+        <div class="demo-bar-inner">
+            <div class="demo-bar-title">
+                <span>⚡ <strong>Demo Switcher:</strong></span>
+                <span class="demo-desc">Quickly switch role to test end-to-end workflows:</span>
+            </div>
+            <div class="demo-users">
+                <a href="{{ url_for('switch_user', user_id=1) }}" class="demo-btn {% if g.user and g.user['id'] == 1 %}active{% endif %}">
+                    👤 Alex (Owner)
+                </a>
+                <a href="{{ url_for('switch_user', user_id=2) }}" class="demo-btn {% if g.user and g.user['id'] == 2 %}active{% endif %}">
+                    🎒 Sam (Borrower)
+                </a>
+                <a href="{{ url_for('switch_user', user_id=3) }}" class="demo-btn {% if g.user and g.user['id'] == 3 %}active{% endif %}">
+                    🛡️ Jordan (Admin)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-header">
+                <a href="{{ url_for('index') }}" class="nav-brand">
+                    <span class="logo-icon">⇄</span>
+                    <span>ShareSpace</span>
+                </a>
+
+                <div class="nav-user">
+                    {% if g.user %}
+                        <a href="{{ url_for('notifications') }}" class="btn btn-outline btn-sm notif-btn" title="Notifications" style="position: relative;">
+                            🔔
+                            {% if g.unread_notifs_count > 0 %}
+                                <span class="notif-badge">{{ g.unread_notifs_count }}</span>
+                            {% endif %}
+                        </a>
+                        <span class="role-badge role-{{ g.user['role'] }}">{{ g.user['role'] }}</span>
+                        <span class="user-display-name" style="font-size: 0.9rem; font-weight: 600;">{{ g.user['name'] }}</span>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-outline btn-sm">Log In</a>
+                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}" class="{% if request.path == url_for('index') %}active{% endif %}">Catalog</a></li>
+                {% if g.user %}
+                    <li>
+                        <a href="{{ url_for('my_bookings') }}" class="{% if request.path == url_for('my_bookings') %}active{% endif %}">
+                            My Bookings
+                            {% if g.active_bookings_count %}
+                                <span class="badge badge-active" style="padding: 1px 6px; font-size: 0.72rem;">{{ g.active_bookings_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% if g.user['role'] in ['owner', 'admin'] %}
+                        <li>
+                            <a href="{{ url_for('manage_requests') }}" class="{% if request.path == url_for('manage_requests') %}active{% endif %}">
+                                Manage Requests
+                                {% if g.pending_requests_count %}
+                                    <span class="badge badge-pending" style="padding: 1px 6px; font-size: 0.72rem;">{{ g.pending_requests_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li><a href="{{ url_for('waitlists') }}" class="{% if request.path == url_for('waitlists') %}active{% endif %}">Waitlists</a></li>
+                    <li>
+                        <a href="{{ url_for('incidents') }}" class="{% if request.path == url_for('incidents') %}active{% endif %}">
+                            Incidents
+                            {% if g.open_incidents_count %}
+                                <span class="badge badge-maintenance" style="padding: 1px 6px; font-size: 0.72rem;">{{ g.open_incidents_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li><a href="{{ url_for('training_catalog') }}" class="{% if request.path == url_for('training_catalog') %}active{% endif %}">Training</a></li>
+                    <li><a href="{{ url_for('activity_history') }}" class="{% if request.path == url_for('activity_history') %}active{% endif %}">Audit Log</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="container">
+        <!-- Flash Feedback Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-msg flash-{{ category }}">
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global Modals (Return Inspection & Incident Reporting) -->
+    <!-- Return Inspection Modal -->
+    <div class="modal-overlay" id="returnModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🔍 Handover & Return Inspection</h3>
+                <button type="button" class="modal-close">&times;</button>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--slate-600); margin-bottom: 16px;">
+                Confirm the return of <strong id="modalResourceTitle">this resource</strong>. Inspect condition and verify included accessories.
+            </p>
+            <form id="returnForm" method="POST" action="">
+                <input type="hidden" name="booking_id" id="modalBookingId" value="">
+                
+                <div class="form-group">
+                    <label for="returnCondition">Condition Rating *</label>
+                    <select name="return_condition" id="returnCondition" class="form-control" required>
+                        <option value="Pristine">🌟 Pristine (5/5) — Spotless, like new</option>
+                        <option value="Good" selected>✅ Good (4/5) — Normal expected wear</option>
+                        <option value="Fair">⚠️ Fair (3/5) — Minor cosmetic scuffs, fully working</option>
+                        <option value="Damaged">🚨 Damaged (Needs Repair / Missing Parts)</option>
+                    </select>
+                </div>
+
+                <div id="damageNotice" style="display: none; background: #fee2e2; color: #991b1b; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 14px;">
+                    ⚠️ Selecting <strong>Damaged</strong> will automatically generate an Incident Report and place the resource into <strong>Maintenance</strong> mode until resolved.
+                </div>
+
+                <div class="form-group">
+                    <label>Return Checklist Verification</label>
+                    <div style="font-size: 0.88rem; display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-weight: normal;"><input type="checkbox" checked required> All standard accessories & cables present</label>
+                        <label style="font-weight: normal;"><input type="checkbox" checked required> Clean and ready for next reservation</label>
+                        <label style="font-weight: normal;"><input type="checkbox" checked required> Stored back in designated station/locker</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="returnNotes">Inspector Notes / Observations</label>
+                    <textarea name="return_notes" id="returnNotes" rows="2" class="form-control" placeholder="e.g. Lens cap included, battery recharged to 80%..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-success">Verify & Complete Return</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Incident Report Modal -->
+    <div class="modal-overlay" id="incidentModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🚨 Report Equipment Incident / Damage</h3>
+                <button type="button" class="modal-close">&times;</button>
+            </div>
+            <form method="POST" action="{{ url_for('report_incident') }}">
+                <input type="hidden" name="resource_id" id="incidentResourceId" value="">
+                
+                <div class="form-group">
+                    <label for="incidentSeverity">Severity Level *</label>
+                    <select name="severity" id="incidentSeverity" class="form-control" required>
+                        <option value="Low">Low — Minor cosmetic issue, still operational</option>
+                        <option value="Medium" selected>Medium — Functionality impaired, repair recommended</option>
+                        <option value="High">High — Non-functional, requires maintenance</option>
+                        <option value="Critical">Critical — Severe hazard / broken safety mechanism</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="incidentDesc">Issue Description *</label>
+                    <textarea name="description" id="incidentDesc" rows="3" class="form-control" required placeholder="Describe what happened, any visible damage, or malfunction observed..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Submit Incident Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span>ShareSpace — 48-Hour Solo Hackathon Resource Sharing Platform</span>
+            <span>Built with Python Flask, SQLite, Vanilla HTML/CSS/JS</span>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

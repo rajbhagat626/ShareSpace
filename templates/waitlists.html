@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Transparent Waiting Lists — ShareSpace{% endblock %}
+
+{% block content %}
+<div class="catalog-header">
+    <div>
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900);">Transparent Waiting Lists</h1>
+        <p style="color: var(--slate-600); font-size: 0.95rem;">
+            When popular equipment is booked, waitlists ensure fair, automated queue promotion when reservations finish or cancel.
+        </p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">&larr; Back to Catalog</a>
+</div>
+
+<!-- My Waitlist Position -->
+<div style="margin-bottom: 32px;">
+    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; color: var(--slate-900);">
+        My Waiting List Positions
+    </h2>
+
+    {% if my_waitlists %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Resource</th>
+                        <th>Queue Position</th>
+                        <th>Requested Window</th>
+                        <th>Queue Status</th>
+                        <th>Joined At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in my_waitlists %}
+                        <tr>
+                            <td>
+                                <strong>{{ w['resource_title'] }}</strong>
+                                <div style="font-size: 0.78rem; color: var(--slate-500);">Managed by: {{ w['owner_name'] }}</div>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: #f3e8ff; color: #6b21a8; font-size: 0.9rem; font-weight: 800;">
+                                    🏆 Position #{{ w['position'] }}
+                                </span>
+                            </td>
+                            <td>{{ w['start_date'] }} &rarr; {{ w['end_date'] }}</td>
+                            <td>
+                                {% if w['status'] == 'notified' %}
+                                    <span class="badge badge-available">
+                                        🔔 Spot Available! Reserve Now
+                                    </span>
+                                {% elif w['status'] == 'waiting' %}
+                                    <span class="badge badge-pending">
+                                        ⏳ In Queue
+                                    </span>
+                                {% else %}
+                                    <span class="badge">{{ w['status'] }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.82rem; color: var(--slate-500);">{{ w['created_at'][:16] }}</td>
+                            <td>
+                                {% if w['status'] == 'notified' %}
+                                    <a href="{{ url_for('resource_detail', resource_id=w['resource_id']) }}" class="btn btn-success btn-sm">
+                                        Claim Spot
+                                    </a>
+                                {% else %}
+                                    <form method="POST" action="{{ url_for('cancel_waitlist', waitlist_id=w['id']) }}">
+                                        <button type="submit" class="btn btn-outline btn-sm" style="color: var(--danger);">
+                                            Leave Waitlist
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="background: white; border: 1px dashed var(--slate-300); border-radius: var(--radius); padding: 24px; text-align: center; color: var(--slate-500); margin-bottom: 24px;">
+            You are not currently in any waiting list. If an item is reserved, click <strong>"Join Waiting List"</strong> on its detail page.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Community Public Queues (Transparency Principle) -->
+<div>
+    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; color: var(--slate-900);">
+        Active Community Queues (Public Transparency)
+    </h2>
+    <p style="font-size: 0.88rem; color: var(--slate-600); margin-bottom: 16px;">
+        To ensure fair allocation, all members can see the transparent queue ordering for high-demand resources.
+    </p>
+
+    {% if public_queues %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Resource</th>
+                        <th>Queue Position</th>
+                        <th>Member</th>
+                        <th>Status</th>
+                        <th>Queue Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in public_queues %}
+                        <tr>
+                            <td><strong>{{ q['resource_title'] }}</strong></td>
+                            <td>
+                                <span class="badge" style="background: #e0f2fe; color: #0284c7; font-weight: 700;">
+                                    #{{ q['position'] }}
+                                </span>
+                            </td>
+                            <td>{{ q['user_name'] }}</td>
+                            <td>
+                                <span class="badge badge-{{ q['status'] }}">
+                                    {{ q['status'] }}
+                                </span>
+                            </td>
+                            <td style="font-size: 0.82rem; color: var(--slate-500);">{{ q['created_at'][:16] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="background: white; border: 1px dashed var(--slate-300); border-radius: var(--radius); padding: 24px; text-align: center; color: var(--slate-500);">
+            No active waiting lists across the platform right now.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

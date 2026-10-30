@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Requests — ShareSpace{% endblock %}
+
+{% block content %}
+<div class="catalog-header">
+    <div>
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900);">Resource Management & Approvals</h1>
+        <p style="color: var(--slate-600); font-size: 0.95rem;">
+            Review incoming requests for your equipment, approve or reject bookings, and complete check-in/return inspections.
+        </p>
+    </div>
+    <a href="{{ url_for('add_resource') }}" class="btn btn-primary">➕ List Another Resource</a>
+</div>
+
+<!-- Section 1: Pending Requests Awaiting Decision -->
+<div style="margin-bottom: 36px;">
+    <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--slate-900); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <span>⏳ Pending Booking Requests</span>
+        <span class="badge badge-pending">{{ pending_requests|length }}</span>
+    </h2>
+
+    {% if pending_requests %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Resource</th>
+                        <th>Requester</th>
+                        <th>Requested Window</th>
+                        <th>Project Purpose</th>
+                        <th>Training Eligibility</th>
+                        <th>Owner Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_requests %}
+                        <tr>
+                            <td>
+                                <strong>{{ req['resource_title'] }}</strong>
+                                <div style="font-size: 0.78rem; color: var(--slate-500);">Location: {{ req['location'] }}</div>
+                            </td>
+                            <td>
+                                <strong>{{ req['requester_name'] }}</strong>
+                                <div style="font-size: 0.78rem; color: var(--slate-500);">{{ req['requester_email'] }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;">{{ req['start_date'] }} &rarr; {{ req['end_date'] }}</div>
+                            </td>
+                            <td style="max-width: 250px;">
+                                <div style="font-size: 0.85rem; color: var(--slate-700);">{{ req['purpose'] }}</div>
+                            </td>
+                            <td>
+                                {% if req['required_cert_name'] %}
+                                    <span class="badge" style="background: #dcfce7; color: #166534; font-size: 0.78rem;">
+                                        ✅ Certified: {{ req['required_cert_name'] }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge" style="background: var(--slate-100); color: var(--slate-600); font-size: 0.78rem;">
+                                        Open Resource
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <form method="POST" action="{{ url_for('approve_booking', booking_id=req['id']) }}">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            ✅ Approve
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('reject_booking', booking_id=req['id']) }}">
+                                        <button type="submit" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: var(--danger-light);">
+                                            ❌ Reject
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="background: white; border: 1px dashed var(--slate-300); border-radius: var(--radius); padding: 32px; text-align: center; color: var(--slate-500);">
+            ✨ No pending requests! All incoming requests have been reviewed.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Section 2: Active Loans & Approved Reservations -->
+<div>
+    <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--slate-900); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <span>📋 Active Loans & Approved Reservations</span>
+        <span class="badge badge-active">{{ active_and_approved|length }}</span>
+    </h2>
+
+    {% if active_and_approved %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Resource</th>
+                        <th>Borrower</th>
+                        <th>Reserved Dates</th>
+                        <th>Status</th>
+                        <th>Lifecycle Handover Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in active_and_approved %}
+                        <tr>
+                            <td>
+                                <strong>{{ item['resource_title'] }}</strong>
+                                <div style="font-size: 0.78rem; color: var(--slate-500);">Location: {{ item['location'] }}</div>
+                            </td>
+                            <td>
+                                <strong>{{ item['borrower_name'] }}</strong>
+                                <div style="font-size: 0.78rem; color: var(--slate-500);">{{ item['borrower_email'] }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;">{{ item['start_date'] }} &rarr; {{ item['end_date'] }}</div>
+                                {% if item['check_in_time'] %}
+                                    <div style="font-size: 0.75rem; color: #0284c7;">Picked up: {{ item['check_in_time'][:16] }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ item['status'] }}">
+                                    {% if item['status'] == 'approved' %}🟣 Approved (Awaiting Handover)
+                                    {% elif item['status'] == 'active' %}🔵 Active / In Use
+                                    {% else %}{{ item['status'] }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    {% if item['status'] == 'approved' %}
+                                        <form method="POST" action="{{ url_for('check_in_booking', booking_id=item['id']) }}">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                📥 Confirm Check-in (Handover)
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if item['status'] == 'active' %}
+                                        <button type="button" class="btn btn-success btn-sm btn-return-modal" data-booking-id="{{ item['id'] }}" data-resource-title="{{ item['resource_title'] }}">
+                                            🔍 Inspect & Complete Return
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-sm btn-report-incident" data-resource-id="{{ item['resource_id'] }}" style="color: var(--danger);">
+                                            🚨 Report Damage
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="background: white; border: 1px dashed var(--slate-300); border-radius: var(--radius); padding: 32px; text-align: center; color: var(--slate-500);">
+            No currently active loans or approved reservations.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Training & Certifications — ShareSpace{% endblock %}
+
+{% block content %}
+<div class="catalog-header">
+    <div>
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900);">Equipment Safety Training & Clearances</h1>
+        <p style="color: var(--slate-600); font-size: 0.95rem;">
+            Specialized resources require verified certifications to ensure community safety and equipment longevity.
+        </p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">&larr; Back to Catalog</a>
+</div>
+
+<div class="resource-grid">
+    {% for cert in certifications %}
+        <div class="detail-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <span class="badge" style="background: var(--purple-light); color: #6b21a8;">
+                        {{ cert['category'] }}
+                    </span>
+                    <span style="font-size: 0.8rem; font-family: monospace; background: var(--slate-100); padding: 2px 6px; border-radius: 4px;">
+                        {{ cert['code'] }}
+                    </span>
+                </div>
+
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--slate-900); margin-bottom: 8px;">
+                    {{ cert['name'] }}
+                </h3>
+
+                <p style="font-size: 0.9rem; color: var(--slate-600); line-height: 1.5; margin-bottom: 16px;">
+                    {{ cert['description'] }}
+                </p>
+
+                <div style="border-top: 1px solid var(--slate-100); padding-top: 12px; margin-bottom: 16px;">
+                    <span style="font-size: 0.82rem; color: var(--slate-500); display: block; margin-bottom: 4px;">
+                        🔓 Unlocks Access To:
+                    </span>
+                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--slate-700);">
+                        {{ cert['resources_count'] }} resource(s) requiring this credential
+                    </div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--slate-200); padding-top: 14px;">
+                {% if cert['user_has_cert'] %}
+                    <div style="background: #dcfce7; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; text-align: center;">
+                        ✅ Certified & Active Clearance
+                    </div>
+                {% else %}
+                    <form method="POST" action="{{ url_for('complete_training', cert_id=cert['id']) }}">
+                        <button type="submit" class="btn btn-warning" style="width: 100%;">
+                            🎓 Complete Training Simulation (1-Click)
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
