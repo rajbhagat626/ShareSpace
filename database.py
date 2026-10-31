@@ -193,5 +193,33 @@ def promote_waitlist_if_any(resource_id):
         return next_waiter
     return None
 
+def ensure_database_initialized():
+    """
+    Ensure the SQLite database exists, schema is initialized, and demo data is seeded.
+    Vital for Render free instances with ephemeral filesystems: whenever an instance
+    boots or wakes from idle, this guarantees the app and sample data are ready.
+    """
+    db_path = DATABASE_PATH
+    need_seed = False
+    if not os.path.exists(db_path) or os.path.getsize(db_path) == 0:
+        need_seed = True
+    else:
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) as count FROM users")
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if not row or row['count'] == 0:
+                need_seed = True
+        except Exception:
+            need_seed = True
+
+    if need_seed:
+        print("[*] Initializing database and seeding demo data for Render/production environment...")
+        from seed import seed_database
+        seed_database()
+
 if __name__ == '__main__':
     init_db()

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Database (optional for git; Render boots fresh and seeds automatically)
+*.db-journal
+
+# Environment & Secrets
+.env
+.env.*
+
+# Logs & temp
+*.log
+.DS_Store
+Thumbs.db

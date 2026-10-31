@@ -10,11 +10,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from database import (
     get_db, query_db, execute_db, log_activity, create_notification,
     check_eligibility, check_fair_usage, check_scheduling_conflict,
-    promote_waitlist_if_any, init_db
+    promote_waitlist_if_any, init_db, ensure_database_initialized
 )
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sharespace-solo-hackathon-2026-secret-key')
+app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
+
+# Ensure SQLite database & sample data are initialized on boot (essential for Render free ephemeral filesystem)
+ensure_database_initialized()
 
 # ---------------------------------------------------------
 # Request Hooks & Context Processors
@@ -1080,14 +1084,11 @@ def mark_notifications_read():
 
 
 # ---------------------------------------------------------
-# App Entry Point
+# App Entry Point (Configured for Render & Production WSGI)
 # ---------------------------------------------------------
 if __name__ == '__main__':
-    # Initialize DB schema if not present
-    if not os.path.exists('sharespace.db'):
-        print("Database not found. Initializing and seeding...")
-        from seed import seed_database
-        seed_database()
-
-    print(">> ShareSpace starting on http://127.0.0.1:5000 ...")
-    app.run(debug=True, port=5000)
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
+    print(f">> ShareSpace starting on http://{host}:{port} (debug={debug}) ...")
+    app.run(host=host, port=port, debug=debug)

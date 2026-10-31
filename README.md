@@ -93,3 +93,28 @@ All 9 test suites pass:
 - `test_07_damage_incident_reporting_and_resolution`: Damage flagging, maintenance mode, and repair restoration
 - `test_08_transparent_waitlist`: Queue positioning and tracking
 - `test_09_auditable_activity_history`: Audit trail verification
+
+---
+
+## ☁️ Deployment on Render (Free Tier)
+
+This project is pre-configured for seamless 1-click deployment on [Render](https://render.com).
+
+### Option A: Using the Render Dashboard (Web Service)
+1. Push this repository to GitHub or GitLab.
+2. In the Render Dashboard, click **New +** -> **Web Service**.
+3. Connect your repository.
+4. Set the following settings:
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn app:app`
+   - **Plan:** Free
+5. Click **Create Web Service**.
+
+### Option B: Using the Included Blueprint (`render.yaml`)
+1. Push this repository to GitHub.
+2. In the Render Dashboard, click **New +** -> **Blueprint**.
+3. Select your repository. Render will automatically read `render.yaml` and configure the build and start commands, Python version, and secure secret key.
+
+> **Note on Render Free Tier Ephemeral Storage:**  
+> Render's free tier spins down after 15 minutes of inactivity and uses an ephemeral disk. The application automatically initializes the SQLite schema and seeds realistic demo data every time the instance starts up, guaranteeing the live demo is always operational. Any newly created test records created during a session will reset to the seeded baseline when the free instance restarts.
